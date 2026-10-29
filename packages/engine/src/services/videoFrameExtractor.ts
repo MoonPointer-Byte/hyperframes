@@ -1469,7 +1469,6 @@ export function isVideoPastTimelineEnd(video: Pick<VideoElement, "start">, timel
   return video.start >= timelineEnd;
 }
 
-// Extraction and lookup must share one origin, or an off-grid start shows every frame a slot late.
 function alignClipStartToFirstOutputFrame(video: VideoElement, fps: number): void {
   if (!Number.isFinite(video.start) || video.start < 0 || !(fps > 0)) return;
   const position = exportClipWindow(video.start, Infinity, fps).start * fps;
