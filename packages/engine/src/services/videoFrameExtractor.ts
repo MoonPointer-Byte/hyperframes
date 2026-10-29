@@ -1469,12 +1469,8 @@ export function isVideoPastTimelineEnd(video: Pick<VideoElement, "start">, timel
   return video.start >= timelineEnd;
 }
 
-/**
- * Start a clip on its first visible output frame, advancing mediaStart by the same source time.
- * Extraction samples at mediaStart + k/fps and lookup reads slot floor((t - start) * fps), so an
- * off-grid start would show every frame one slot late.
- */
-function alignClipToFrameGrid(video: VideoElement, fps: number): void {
+// Extraction and lookup must share one origin, or an off-grid start shows every frame a slot late.
+function alignClipStartToFirstOutputFrame(video: VideoElement, fps: number): void {
   if (!Number.isFinite(video.start) || video.start < 0 || !(fps > 0)) return;
   const position = exportClipWindow(video.start, Infinity, fps).start * fps;
   const firstFrame =
@@ -2611,7 +2607,7 @@ export async function extractAllVideoFrames(
       }
       try {
         const metadata = videoMetadata[index] ?? (await extractMediaMetadata(videoPath));
-        alignClipToFrameGrid(video, fps);
+        alignClipStartToFirstOutputFrame(video, fps);
         const initialWindow = resolveVideoExtractionWindow(video, metadata, options.timelineEnd);
         const window = await resolveFinalFrameExtractionWindow(
           videoPath,
