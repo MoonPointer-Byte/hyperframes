@@ -2221,11 +2221,14 @@ describe("syncRuntimeMedia", () => {
         expect(due75ms.el.play).toHaveBeenCalledTimes(1);
       });
 
-      it("does not learn from a video started by Play", () => {
+      it("learns half the start delay of a video started by Play", () => {
         startWithLag(videoClip({ start: 0, end: 10, mediaStart: 0 }), 0, 0.3, 0.074, false);
-        const due50ms = videoClip({ start: 10, end: 20, mediaStart: 0 });
-        tick(due50ms, 9.95);
-        expect(due50ms.el.play).not.toHaveBeenCalled();
+        const due45ms = videoClip({ start: 10, end: 20, mediaStart: 0 });
+        tick(due45ms, 9.955);
+        expect(due45ms.el.play).not.toHaveBeenCalled();
+        const due35ms = videoClip({ start: 10, end: 20, mediaStart: 0 });
+        tick(due35ms, 9.965);
+        expect(due35ms.el.play).toHaveBeenCalledTimes(1);
       });
 
       it("learns from a video seeked and started in the same tick", () => {
