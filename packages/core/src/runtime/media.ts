@@ -376,13 +376,15 @@ function outPointHoldTime(el: HTMLMediaElement, outPoint: number, watched: boole
 }
 
 // A muted video's clock is its audio track, which starts tens of ms after play(), so an upcoming
-// video starts that early, hidden, by the delay learned from earlier starts.
+// video starts that early, hidden, by the delay learned from earlier starts while the playhead ran.
 let videoStartLatency: number | null = null;
 const videoStarts = new WeakMap<HTMLMediaElement, { offset: number; lead: number; at: number }>();
+let playheadWasRunning = false;
 
 /** Test-only seam. */
 export function resetVideoStartLatency(): void {
   videoStartLatency = null;
+  playheadWasRunning = false;
 }
 
 /** A quarter second in: its lag plus how early it started, capped at 0.1 s. */
@@ -449,6 +451,9 @@ export function syncRuntimeMedia(params: {
   getCompositionDuration: () => number;
 }): void {
   const forceMuteAll = !!(params.outputMuted || params.userMuted);
+  // A start at Play also waits on the playhead's own start, so it overstates a cut's start delay.
+  const learnsStarts = playheadWasRunning;
+  playheadWasRunning = params.playing && params.clockAdvancing !== false;
   for (const clip of params.clips) {
     const { el } = clip;
     if (!el.isConnected) continue;
@@ -778,7 +783,7 @@ export function syncRuntimeMedia(params: {
         // the element waiting for a callback that never came.
         markPlayRequested(el);
         // Offset read after any seek above; a loop could wrap a lap before the sample.
-        if (isNonLoopVideo)
+        if (isNonLoopVideo && learnsStarts)
           videoStarts.set(el, {
             offset: relTime - (el.currentTime || 0),
             lead: Math.max(0, clip.start - params.timeSeconds) / params.playbackRate,
