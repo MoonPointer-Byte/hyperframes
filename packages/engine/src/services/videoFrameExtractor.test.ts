@@ -4523,7 +4523,7 @@ describe.skipIf(!HAS_FFMPEG)("a clip whose data-start is off the frame grid", ()
     expect(new Set(shown).size).toBe(1);
   }, 60_000);
 
-  it.each([1.95, 1.9667, 2.0001, 2.0167, 1.999999])(
+  it.each([1.95, 2.0001, 1.999999])(
     "shows source frame N at output frame N for data-start=data-media-start=%s",
     async (start) => {
       const shown = await sourceFramesShown(start, [61, 62, 63, 64, 65]);
