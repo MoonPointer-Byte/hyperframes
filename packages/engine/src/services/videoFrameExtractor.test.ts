@@ -4477,6 +4477,52 @@ describe.skipIf(!HAS_FFMPEG)("a clip whose data-start is off the frame grid", ()
     });
   }
 
+  it("keeps a looped clip on the same source frame after every wrap", async () => {
+    const loopSource = join(FIXTURE_DIR, "loop.mp4");
+    const synth = await runFfmpeg([
+      "-y",
+      "-v",
+      "error",
+      "-f",
+      "lavfi",
+      "-i",
+      "color=c=black:s=64x64:d=2:r=30",
+      "-vf",
+      "format=gray,geq=lum='N*4'",
+      "-c:v",
+      "libx264",
+      "-crf",
+      "0",
+      "-pix_fmt",
+      "yuv420p",
+      loopSource,
+    ]);
+    expect(synth.success).toBe(true);
+    const outDir = join(FIXTURE_DIR, "out-loop");
+    mkdirSync(outDir, { recursive: true });
+    const video: VideoElement = {
+      id: "v",
+      src: loopSource,
+      start: 0.35,
+      end: 6.35,
+      mediaStart: 1,
+      loop: true,
+      hasAudio: false,
+    };
+    const result = await extractAllVideoFrames([video], FIXTURE_DIR, {
+      fps: FPS,
+      outputDir: outDir,
+      timelineEnd: 6,
+    });
+    expect(result.errors).toEqual([]);
+    const table = createFrameLookupTable([video], result.extracted, FPS);
+    const shown = [0, 1, 2, 3, 4].map((wrap) => {
+      const path = table.getFrame("v", (12 + wrap * FPS + 1) / FPS);
+      return path ? Math.round(readFirstFramePixel(path, 0, 0)[0] / 4) : null;
+    });
+    expect(new Set(shown).size).toBe(1);
+  }, 60_000);
+
   it.each([1.95, 1.9667, 2.0001, 2.0167, 1.999999])(
     "shows source frame N at output frame N for data-start=data-media-start=%s",
     async (start) => {

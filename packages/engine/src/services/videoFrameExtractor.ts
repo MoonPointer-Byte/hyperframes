@@ -1470,7 +1470,7 @@ export function isVideoPastTimelineEnd(video: Pick<VideoElement, "start">, timel
 }
 
 function alignClipStartToFirstOutputFrame(video: VideoElement, fps: number): void {
-  if (!Number.isFinite(video.start) || video.start < 0 || !(fps > 0)) return;
+  if (video.loop || !Number.isFinite(video.start) || video.start < 0 || !(fps > 0)) return;
   const position = exportClipWindow(video.start, Infinity, fps).start * fps;
   const firstFrame =
     Math.abs(position - Math.round(position)) < 1e-6 ? Math.round(position) : Math.ceil(position);
