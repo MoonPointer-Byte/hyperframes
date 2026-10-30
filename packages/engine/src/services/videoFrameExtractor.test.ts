@@ -4450,7 +4450,10 @@ describe.skipIf(!HAS_FFMPEG)("a clip whose data-start is off the frame grid", ()
 
   afterAll(() => rmSync(FIXTURE_DIR, { recursive: true, force: true }), 30_000);
 
-  async function sourceFrameShown(start: number, outputFrame: number): Promise<number | null> {
+  async function sourceFramesShown(
+    start: number,
+    outputFrames: number[],
+  ): Promise<(number | null)[]> {
     const outDir = join(FIXTURE_DIR, `out-${start}`);
     mkdirSync(outDir, { recursive: true });
     const video: VideoElement = {
@@ -4468,15 +4471,16 @@ describe.skipIf(!HAS_FFMPEG)("a clip whose data-start is off the frame grid", ()
     });
     expect(result.errors).toEqual([]);
     const table = createFrameLookupTable([video], result.extracted, FPS);
-    const path = table.getFrame("v", outputFrame / FPS);
-    return path ? Math.round(readFirstFramePixel(path, 0, 0)[0] / 3) : null;
+    return outputFrames.map((n) => {
+      const path = table.getFrame("v", n / FPS);
+      return path ? Math.round(readFirstFramePixel(path, 0, 0)[0] / 3) : null;
+    });
   }
 
   it.each([1.95, 1.9667, 2.0001, 2.0167, 1.999999])(
     "shows source frame N at output frame N for data-start=data-media-start=%s",
     async (start) => {
-      const shown = [];
-      for (const n of [61, 62, 63, 64, 65]) shown.push(await sourceFrameShown(start, n));
+      const shown = await sourceFramesShown(start, [61, 62, 63, 64, 65]);
       expect(shown).toEqual([61, 62, 63, 64, 65]);
     },
     60_000,
